@@ -1,0 +1,26 @@
+# Arquivo de variáveis de ambiente (contém dados sensíveis)
+.env
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Cache
+*.cache
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependências (se usar Composer futuramente)
+/vendor/
+composer.lock

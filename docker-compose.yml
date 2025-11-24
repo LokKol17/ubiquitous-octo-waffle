@@ -1,0 +1,18 @@
+version: '3.1'
+
+services:
+  db:
+    image: mysql:latest
+    container_name: mysql-compose-container
+    environment:
+      MYSQL_ROOT_PASSWORD: minha_senha_forte
+      MYSQL_DATABASE: botbot_electronics
+      MYSQL_USER: usuario_teste
+      MYSQL_PASSWORD: senha_teste
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
