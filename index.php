@@ -1,4 +1,7 @@
 <?php
+// Iniciar sessão antes de qualquer saída
+session_start();
+
 // Carregar configurações
 require_once 'config.php';
 
@@ -204,7 +207,22 @@ try {
       <h1><?php echo Config::get('APP_NAME', 'Bot Bot Electronics'); ?></h1>
       <p>Sua loja de itens de excelente qualidade (e procedência duvidosa)</p>
       <h2>Te liga nos nossos produtos e preços</h2>
-      <p><a href="busca.php" style="color: #3498db; text-decoration: none; font-size: 1.1em;">🔍 Buscar Produtos</a></p>
+      <p>
+        <a href="busca.php" style="color: #3498db; text-decoration: none; font-size: 1.1em;">🔍 Buscar Produtos</a>
+        <?php if (isset($_GET['logout'])): ?>
+          <span style="color: #27ae60; margin-left: 20px;">✅ Logout realizado com sucesso!</span>
+        <?php endif; ?>
+      </p>
+      <p>
+        <?php
+        if (isset($_SESSION['usuario_id'])): ?>
+          <a href="meus-pedidos.php" style="color: #9b59b6; text-decoration: none; font-size: 1.1em;">👤 Olá, <?php echo htmlspecialchars($_SESSION['usuario_nome']); ?>! Ver meus pedidos</a>
+          <span style="margin: 0 10px;">|</span>
+          <a href="logout.php" style="color: #e74c3c; text-decoration: none; font-size: 1em;">🚪 Sair</a>
+        <?php else: ?>
+          <a href="login.php" style="color: #27ae60; text-decoration: none; font-size: 1.1em;">🔐 Fazer Login / Ver Pedidos</a>
+        <?php endif; ?>
+      </p>
     </div>
 
     <div class="categorias-nav">

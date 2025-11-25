@@ -1,4 +1,7 @@
 <?php
+// Iniciar sessão antes de qualquer saída
+session_start();
+
 // Carregar configurações
 require_once 'config.php';
 
@@ -245,6 +248,16 @@ try {
     <div class="header">
       <h1><?php echo Config::get('APP_NAME', 'Bot Bot Electronics'); ?></h1>
       <p>Sua loja de itens de excelente qualidade (e procedência duvidosa)</p>
+      <p>
+        <?php
+        if (isset($_SESSION['usuario_id'])): ?>
+          <a href="meus-pedidos.php" style="color: #9b59b6; text-decoration: none;">👤 <?php echo htmlspecialchars($_SESSION['usuario_nome']); ?> - Ver pedidos</a>
+          <span style="margin: 0 10px;">|</span>
+          <a href="logout.php" style="color: #e74c3c; text-decoration: none;">🚪 Sair</a>
+        <?php else: ?>
+          <a href="login.php" style="color: #27ae60; text-decoration: none;">🔐 Fazer Login</a>
+        <?php endif; ?>
+      </p>
     </div>
 
     <div class="produto-detalhes">
@@ -285,11 +298,11 @@ try {
         </div>
         
         <div class="botoes">
-          <button class="btn btn-comprar" onclick="comprarProduto(<?php echo $produto['id']; ?>)">
-            Comprar Agora
-          </button>
+          <a href="comprar.php?produto_id=<?php echo $produto['id']; ?>" class="btn btn-comprar">
+            🛒 Comprar Agora
+          </a>
           <a href="index.php" class="btn btn-voltar">
-            Voltar ao Catálogo
+            ← Voltar ao Catálogo
           </a>
         </div>
       </div>
