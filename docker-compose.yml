@@ -3,7 +3,7 @@ version: '3.1'
 services:
   db:
     image: mysql:latest
-    container_name: mysql-compose-container
+    container_name: botbot_mysql
     environment:
       MYSQL_ROOT_PASSWORD: minha_senha_forte
       MYSQL_DATABASE: botbot_electronics
@@ -13,6 +13,33 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./db-setup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  web:
+    image: php:8.1-apache
+    container_name: botbot_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USERNAME=usuario_teste
+      - DB_PASSWORD=senha_teste
+      - DB_DATABASE=botbot_electronics
+    command: >
+      bash -c "
+      docker-php-ext-install mysqli pdo pdo_mysql &&
+      apache2-foreground
+      "
 
 volumes:
   db_data:
