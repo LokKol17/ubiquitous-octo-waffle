@@ -1,8 +1,30 @@
 # Bot Bot Electronics 🛒
 
-Uma loja online de produtos eletrônicos com uma estrutura de banco de dados normalizada e interface moderna.
+Uma loja online de produtos eletrônicos com uma estrutura de banco de dados normalizada e interface ### 📋 Instalação Manual
 
-## 🗄️ Estrutura do Banco de Dados
+1. Configure um servidor web (Apache/Nginx) com PHP 8.1+
+2. Configure MySQL/MariaDB
+3. Crie arquivo `.env` com as configurações do banco:
+   ```env
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_USERNAME=seu_usuario
+   DB_PASSWORD=sua_senha
+   DB_DATABASE=botbot_electronics
+   APP_NAME="Bot Bot Electronics"
+   ```
+4. Execute o script SQL: `mysql < db-setup.sql`
+5. Configure o servidor web para servir os arquivos
+
+### 🎮 Como Testar o Sistema
+
+1. **Acesse**: http://localhost:8080
+2. **Navegue** pelos produtos
+3. **Faça login** com:
+   - Email: `joao@email.com` (ou maria@email.com, pedro@email.com)
+   - Senha: `senha123`
+4. **Compre produtos** clicando em "Comprar Agora"
+5. **Veja seus pedidos** na área "Meus Pedidos"️ Estrutura do Banco de Dados
 
 ### Tabelas Principais
 
@@ -57,13 +79,18 @@ Uma loja online de produtos eletrônicos com uma estrutura de banco de dados nor
 ubiquitous-octo-waffle/
 ├── config.php              # Configurações e classe Database
 ├── db-setup.sql            # Script completo de criação do banco
-├── script.php              # Script de inicialização usando db-setup.sql
+├── script.php              # Script de inicialização (backup)
 ├── index.php               # Página principal com catálogo
 ├── produto.php             # Página de detalhes do produto
 ├── categoria.php           # Listagem por categoria
 ├── marca.php               # Listagem por marca
 ├── busca.php               # Sistema de busca
+├── login.php               # Sistema de login
+├── logout.php              # Logout
+├── meus-pedidos.php        # Área do cliente
+├── comprar.php             # Sistema de compra
 ├── docker-compose.yml      # Configuração Docker
+├── .env                    # Variáveis de ambiente
 └── *.jpg                   # Imagens dos produtos
 ```
 
@@ -75,14 +102,17 @@ ubiquitous-octo-waffle/
 - **Navegação por Categoria**: Filtragem por tipos de produtos
 - **Navegação por Marca**: Filtragem por fabricantes
 - **Sistema de Busca**: Busca inteligente em produtos, marcas e categorias
+- **Sistema de Login**: Autenticação de usuários
+- **Área do Cliente**: Visualização de pedidos do usuário
+- **Sistema de Compra**: Carrinho simplificado e criação de pedidos
 - **Design Responsivo**: Interface adaptável para dispositivos móveis
 - **Banco Normalizado**: Estrutura otimizada com relacionamentos
 
-### 🚧 Em Desenvolvimento
-- Carrinho de compras
-- Sistema de usuários
-- Processamento de pedidos
-- Painel administrativo
+### � Sistema de Usuários
+- **Login/Logout**: Sistema de autenticação
+- **3 usuários demo**: joao@email.com, maria@email.com, pedro@email.com
+- **Senha padrão**: senha123 (para demonstração)
+- **Área de pedidos**: Visualização completa do histórico de compras
 
 ## 🛠️ Tecnologias
 
@@ -93,20 +123,35 @@ ubiquitous-octo-waffle/
 
 ## 📦 Instalação
 
-### Usando Docker (Recomendado)
+### 🐳 Usando Docker (Recomendado)
 
-1. Clone o repositório
-2. Execute o Docker Compose:
+**Instalação simples em 2 comandos:**
+
+1. Clone o repositório e execute:
    ```bash
+   git clone <repo-url>
+   cd ubiquitous-octo-waffle
    docker-compose up -d
    ```
-3. Execute o script de inicialização:
-   ```bash
-   docker-compose exec web php script.php
-   ```
-4. Acesse `http://localhost:8080`
 
-### Instalação Manual
+2. Acesse no navegador:
+   ```
+   http://localhost:8080
+   ```
+
+**O que acontece automaticamente:**
+- ✅ MySQL é configurado e populado com dados de exemplo
+- ✅ PHP 8.1 + Apache são configurados
+- ✅ Extensões PHP (mysqli, pdo) são instaladas
+- ✅ Banco de dados é criado e inicializado com `db-setup.sql`
+- ✅ Website fica disponível imediatamente
+
+**Para parar:**
+```bash
+docker-compose down
+```
+
+### 📋 Instalação Manual
 
 1. Configure um servidor web (Apache/Nginx) com PHP
 2. Configure MySQL/MariaDB
@@ -147,8 +192,15 @@ O banco vem pré-populado com:
 - **5 produtos** (iPhone, Notebook, Fones, Tablet, Smartwatch)
 - **3 marcas** (Apple, Asus, Samsung)
 - **5 categorias** (Smartphones, Notebooks, Acessórios, Tablets, Wearables)
-- **3 usuários** de exemplo
-- **Pedidos** de demonstração
+- **3 usuários** de exemplo com pedidos
+- **3 pedidos** de demonstração com itens e status diferentes
+
+### 👥 Usuários Demo
+- **João Silva** (joao@email.com) - Tem pedido enviado
+- **Maria Santos** (maria@email.com) - Tem pedido confirmado  
+- **Pedro Oliveira** (pedro@email.com) - Tem pedido pendente
+
+**Senha para todos**: `senha123`
 
 ## 🔍 Sistema de Busca
 
@@ -174,7 +226,7 @@ Resultados ordenados por relevância (nome exato → marca → categoria → des
 
 ```env
 # Configurações do Banco de Dados
-DB_HOST=127.0.0.1
+DB_HOST=db                    # 'db' para Docker, '127.0.0.1' para local
 DB_PORT=3306
 DB_USERNAME=usuario_teste
 DB_PASSWORD=senha_teste
@@ -194,14 +246,39 @@ TIMEZONE=America/Sao_Paulo
 
 ## 🏗️ Arquitetura
 
-### Fluxo da Aplicação
+### 🐳 Docker Compose
 
-1. `config.php` carrega as configurações do `.env`
-2. `Database::getConnection()` estabelece conexão MySQL
-3. `index.php` lista produtos com navegação por categoria/marca
-4. `produto.php` exibe informações detalhadas com galeria de imagens
-5. `busca.php` oferece sistema de busca inteligente
-6. `categoria.php` e `marca.php` filtram produtos por tipo
+A aplicação usa dois containers:
+
+#### 📊 `botbot_mysql`
+- **Image**: mysql:latest
+- **Porta**: 3306
+- **Recursos**: 
+  - Inicialização automática do banco com `db-setup.sql`
+  - Health check para garantir que está pronto
+  - Volume persistente para dados
+  - Usuário e banco criados automaticamente
+
+#### 🌐 `botbot_web`  
+- **Image**: php:8.1-apache
+- **Porta**: 8080 → 80
+- **Recursos**:
+  - Extensões PHP instaladas automaticamente
+  - Código fonte montado em `/var/www/html`
+  - Aguarda MySQL estar saudável antes de iniciar
+  - Variáveis de ambiente configuradas
+
+### 📋 Fluxo da Aplicação
+
+1. `docker-compose up` → Inicia MySQL e aguarda ficar saudável
+2. MySQL executa `db-setup.sql` automaticamente na primeira inicialização
+3. Container web inicia com PHP + Apache configurados
+4. `config.php` carrega as configurações do `.env`
+5. `Database::getConnection()` conecta ao MySQL via hostname `db`
+6. `index.php` lista produtos com navegação por categoria/marca
+7. `produto.php` exibe informações detalhadas com galeria de imagens
+8. `login.php` + `meus-pedidos.php` oferecem sistema de usuários
+9. `comprar.php` permite criar novos pedidos
 
 ## 🤝 Contribuição
 
