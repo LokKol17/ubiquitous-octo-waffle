@@ -14,8 +14,21 @@ try {
 
     $produto_id = intval($_GET['id']);
 
-    // Buscar o produto específico
-    $sql = "SELECT id, nome, descricao, preco, imagem FROM produtos WHERE id = ?";
+    // Buscar o produto específico com marca, categoria e todas as imagens
+    $sql = "
+        SELECT 
+            p.id, 
+            p.nome, 
+            p.descricao, 
+            p.preco,
+            m.nome as marca_nome,
+            c.nome as categoria_nome,
+            c.descricao as categoria_descricao
+        FROM produtos p
+        LEFT JOIN marcas m ON p.marca_id = m.id
+        LEFT JOIN categorias c ON p.categoria_id = c.id
+        WHERE p.id = ?
+    ";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $produto_id);
     $stmt->execute();
@@ -30,6 +43,24 @@ try {
 
     $produto = $result->fetch_assoc();
     $stmt->close();
+
+    // Buscar todas as imagens do produto
+    $sql_imagens = "SELECT nome_arquivo, eh_principal FROM produto_imagens WHERE produto_id = ? ORDER BY eh_principal DESC, id";
+    $stmt_imagens = $conn->prepare($sql_imagens);
+    $stmt_imagens->bind_param("i", $produto_id);
+    $stmt_imagens->execute();
+    $result_imagens = $stmt_imagens->get_result();
+    
+    $imagens = [];
+    while ($img = $result_imagens->fetch_assoc()) {
+        $imagens[] = $img;
+    }
+    $stmt_imagens->close();
+
+    // Se não houver imagens, usar uma imagem padrão
+    if (empty($imagens)) {
+        $imagens[] = ['nome_arquivo' => 'placeholder.jpg', 'eh_principal' => true];
+    }
     
 } catch (Exception $e) {
     die("Erro: " . $e->getMessage());
@@ -81,6 +112,45 @@ try {
       max-height: 500px;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .galeria-miniaturas {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    .miniatura {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.3s;
+    }
+    .miniatura:hover, .miniatura.ativa {
+      border-color: #3498db;
+    }
+    .produto-badges {
+      margin-bottom: 20px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: bold;
+      margin-right: 10px;
+      margin-bottom: 5px;
+    }
+    .marca-badge {
+      background-color: #3498db;
+      color: white;
+    }
+    .categoria-badge {
+      background-color: #9b59b6;
+      color: white;
     }
     .produto-info {
       flex: 1;
@@ -179,11 +249,32 @@ try {
 
     <div class="produto-detalhes">
       <div class="produto-imagem">
-        <img src="<?php echo htmlspecialchars($produto['imagem']); ?>" alt="<?php echo htmlspecialchars($produto['nome']); ?>">
+        <img src="<?php echo htmlspecialchars($imagens[0]['nome_arquivo']); ?>" alt="<?php echo htmlspecialchars($produto['nome']); ?>" id="imagemPrincipal">
+        
+        <?php if (count($imagens) > 1): ?>
+        <div class="galeria-miniaturas">
+          <?php foreach ($imagens as $index => $img): ?>
+            <img src="<?php echo htmlspecialchars($img['nome_arquivo']); ?>" 
+                 alt="<?php echo htmlspecialchars($produto['nome']); ?>" 
+                 class="miniatura <?php echo $index === 0 ? 'ativa' : ''; ?>"
+                 onclick="trocarImagem('<?php echo htmlspecialchars($img['nome_arquivo']); ?>', this)">
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
       </div>
       
       <div class="produto-info">
         <h2><?php echo htmlspecialchars($produto['nome']); ?></h2>
+        
+        <div class="produto-badges">
+          <?php if (!empty($produto['marca_nome'])): ?>
+            <span class="badge marca-badge"><?php echo htmlspecialchars($produto['marca_nome']); ?></span>
+          <?php endif; ?>
+          
+          <?php if (!empty($produto['categoria_nome'])): ?>
+            <span class="badge categoria-badge"><?php echo htmlspecialchars($produto['categoria_nome']); ?></span>
+          <?php endif; ?>
+        </div>
         
         <div class="descricao">
           <?php echo nl2br(htmlspecialchars($produto['descricao'])); ?>
@@ -209,6 +300,12 @@ try {
       <ul>
         <li><strong>Código do Produto:</strong> #<?php echo str_pad($produto['id'], 5, '0', STR_PAD_LEFT); ?></li>
         <li><strong>Nome:</strong> <?php echo htmlspecialchars($produto['nome']); ?></li>
+        <?php if (!empty($produto['marca_nome'])): ?>
+        <li><strong>Marca:</strong> <?php echo htmlspecialchars($produto['marca_nome']); ?></li>
+        <?php endif; ?>
+        <?php if (!empty($produto['categoria_nome'])): ?>
+        <li><strong>Categoria:</strong> <?php echo htmlspecialchars($produto['categoria_nome']); ?></li>
+        <?php endif; ?>
         <li><strong>Preço:</strong> R$ <?php echo number_format($produto['preco'], 2, ',', '.'); ?></li>
         <li><strong>Disponibilidade:</strong> <span style="color: #27ae60;">✓ Em estoque</span></li>
         <li><strong>Frete:</strong> Calculado no checkout</li>
@@ -224,6 +321,19 @@ try {
   <script>
     function comprarProduto(produtoId) {
       alert('Funcionalidade de compra ainda não implementada!\nProduto ID: ' + produtoId + '\n\nEm breve teremos um carrinho de compras funcionando! 🛒');
+    }
+
+    function trocarImagem(novaImagem, elemento) {
+      // Trocar a imagem principal
+      document.getElementById('imagemPrincipal').src = novaImagem;
+      
+      // Remover classe ativa de todas as miniaturas
+      document.querySelectorAll('.miniatura').forEach(function(img) {
+        img.classList.remove('ativa');
+      });
+      
+      // Adicionar classe ativa à miniatura clicada
+      elemento.classList.add('ativa');
     }
   </script>
 </body>
